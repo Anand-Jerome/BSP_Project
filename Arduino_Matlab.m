@@ -92,5 +92,6 @@ for i = 1:buffer_size:numSamples
     pause(0.01); % Adjust the pause time as needed
 end
 
+% sdjglsjgbjsfgb
 % Close Arduino connection
 clear a;
