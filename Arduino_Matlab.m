@@ -1,5 +1,5 @@
 % Create Arduino object
-a = arduino('COM4', 'Uno'); % Replace 'COMX' with your actual port
+a = arduino('COM4', 'Uno','BaudRate',9600); % Replace 'COMX' with your actual port
 
 % ecg=load('ecg_hfn.dat');
 % fs=1000; % Sampling frequency
@@ -68,20 +68,31 @@ h = animatedline;
 % ax = axes('Parent', h);
 W = load("Wiener_Filter_Parameter.mat","Y");
 Weight = W.Y;
-buffer_size = 20;
-ecgData = zeros(buffer_size, 1);
-
+buffer_size = 50;
+ecgData = zeros(numSamples, 1);
+sig_index = 1;
 for i = 1:buffer_size:numSamples
     for j = 1:buffer_size    
         ecgValue = readVoltage(a, 'A0');
-        ecgData(j) = ecgValue;
+        ecgData(sig_index) = ecgValue;
+        sig_index = sig_index + 1;
         pause(0.001);
     end
-    output = conv(ecgData,Weight);
+    % output = conv(ecgData(max(sig_index-length(Weight)+1,1):sig_index),Weight);
+    
     % Plot real-time data
     % plot(ax, ecgData, 'b', 'LineWidth', 1.5);
-    addpoints(h,[k:k+(length(Weight)+buffer_size-2)],output);
-    k=k+(length(Weight)+buffer_size-2);
+    if k==1
+        output = conv(ecgData(1:sig_index),Weight);
+        addpoints(h,k:k+buffer_size-1,output(1:buffer_size-1))
+        k = k + buffer_size;
+    else
+        output = conv(ecgData(1:sig_index),Weight);
+        addpoints(h,[k:k+buffer_size-1],output(1:length(output)-length(Weight)));
+        k = k + buffer_size;
+    end
+    % addpoints(h,[k:k+(length(Weight)+buffer_size-2)],output(length(output)-buffer_size+1:length(output)));
+    
     drawnow
     title('Real-Time ECG Data');
     xlabel('Sample');
@@ -92,6 +103,4 @@ for i = 1:buffer_size:numSamples
     pause(0.01); % Adjust the pause time as needed
 end
 
-% sdjglsjgbjsfgb
-% Close Arduino connection
 clear a;
